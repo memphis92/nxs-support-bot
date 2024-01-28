@@ -2,3 +2,5 @@
 /.vscode
 /.tmp
 __debug_bin
+/.idea
+/build

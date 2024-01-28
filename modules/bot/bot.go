@@ -17,14 +17,15 @@ import (
 )
 
 type Settings struct {
-	APIToken   string
-	Log        *logrus.Logger
-	Cache      cache.Cache
-	RedisHost  string
-	LangBundle localization.Bundle
-	Feedback   *FeedbackSettings
-	Issues     issues.Issues
-	Users      users.Users
+	APIToken       string
+	Log            *logrus.Logger
+	Cache          cache.Cache
+	RedisHost      string
+	LangBundle     localization.Bundle
+	Feedback       *FeedbackSettings
+	Issues         issues.Issues
+	Users          users.Users
+	DefaultProject *DefaultProjectSettings
 }
 
 type FeedbackSettings struct {
@@ -32,17 +33,28 @@ type FeedbackSettings struct {
 	UserID    int64
 }
 
+type DefaultProjectSettings struct {
+	ProjectID   int64
+	ProjectName string
+}
+
 type Bot struct {
 	bot tg.Telegram
 }
 
 type botCtx struct {
-	log      *logrus.Logger
-	c        cache.Cache
-	users    users.Users
-	issues   issues.Issues
-	lb       localization.Bundle
-	feedback *feedbackCtx
+	log            *logrus.Logger
+	c              cache.Cache
+	users          users.Users
+	issues         issues.Issues
+	lb             localization.Bundle
+	feedback       *feedbackCtx
+	defaultproject *defaultProjectCtx
+}
+
+type defaultProjectCtx struct {
+	projectID   int64
+	projectName string
 }
 
 type feedbackCtx struct {
@@ -199,6 +211,15 @@ func Init(settings Settings) (*Bot, error) {
 				return &feedbackCtx{
 					projectID: settings.Feedback.ProjectID,
 					userID:    settings.Feedback.UserID,
+				}
+			}(),
+			defaultproject: func() *defaultProjectCtx {
+				if settings.DefaultProject == nil {
+					return nil
+				}
+				return &defaultProjectCtx{
+					projectID:   settings.DefaultProject.ProjectID,
+					projectName: settings.DefaultProject.ProjectName,
 				}
 			}(),
 		})

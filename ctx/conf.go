@@ -40,14 +40,18 @@ type telegramConf struct {
 }
 
 type rdmnConf struct {
-	Host     string            `conf:"host" conf_extraopts:"required"`
-	Key      string            `conf:"key" conf_extraopts:"required"`
-	Feedback *rdmnFeedbackConf `conf:"feedback"`
+	Host           string                  `conf:"host" conf_extraopts:"required"`
+	Key            string                  `conf:"key" conf_extraopts:"required"`
+	Feedback       *rdmnFeedbackConf       `conf:"feedback"`
+	DefaultProject *rdmnDefaultProjectConf `conf:"defaultproject"`
 }
 
 type rdmnFeedbackConf struct {
 	ProjectIdentifier string `conf:"projectIdentifier" conf_extraopts:"required"`
 	UserID            int64  `conf:"userID" conf_extraopts:"required"`
+}
+type rdmnDefaultProjectConf struct {
+	ProjectIdentifier string `conf:"projectIdentifier" conf_extraopts:"required"`
 }
 
 type apiConf struct {

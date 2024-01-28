@@ -59,6 +59,19 @@ func issueCreateState(t *tg.Telegram, sess *tg.Session) (tg.StateHandlerRes, err
 
 		// TODO: check if membership projects empty
 		proj := misc.IDName{}
+
+		if bCtx.defaultproject != nil {
+			var defaultProject misc.IDName = misc.IDName{bCtx.defaultproject.projectID, bCtx.defaultproject.projectName}
+			var projectExist bool = false
+			for _, prj := range mms {
+				if prj == defaultProject {
+					projectExist = true
+				}
+			}
+			if !projectExist {
+				mms = append(mms, defaultProject)
+			}
+		}
 		if len(mms) > 0 {
 			proj = mms[0]
 		}

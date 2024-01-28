@@ -49,6 +49,11 @@ type feedbackSettings struct {
 	UserID    int64
 }
 
+type defaultProjectSettings struct {
+	ProjectID   int64
+	ProjectName string
+}
+
 func AppCtxInit() (any, error) {
 
 	c := &Ctx{}
@@ -128,6 +133,22 @@ func AppCtxInit() (any, error) {
 		}
 	}
 
+	var defaultproject *defaultProjectSettings
+	if conf.Redmine.DefaultProject != nil {
+		proj, err := rdmn.ProjectGetByIdentifier(conf.Redmine.DefaultProject.ProjectIdentifier)
+		if err != nil {
+			c.Log.WithFields(logrus.Fields{
+				"details": err,
+			}).Errorf("ctx init")
+			return nil, err
+		}
+
+		defaultproject = &defaultProjectSettings{
+			ProjectID:   proj.ID,
+			ProjectName: proj.Name,
+		}
+	}
+
 	iss := issues.Init(
 		issues.Settings{
 			DB:       primeDB,
@@ -147,14 +168,15 @@ func AppCtxInit() (any, error) {
 
 	// Set bot context
 	c.Bot, err = tgbot.Init(tgbot.Settings{
-		APIToken:   conf.Telegram.APIToken,
-		Log:        c.Log,
-		Cache:      c.Cache.C,
-		RedisHost:  redisHost,
-		LangBundle: lb,
-		Issues:     iss,
-		Users:      usrs,
-		Feedback:   (*tgbot.FeedbackSettings)(feedback),
+		APIToken:       conf.Telegram.APIToken,
+		Log:            c.Log,
+		Cache:          c.Cache.C,
+		RedisHost:      redisHost,
+		LangBundle:     lb,
+		Issues:         iss,
+		Users:          usrs,
+		Feedback:       (*tgbot.FeedbackSettings)(feedback),
+		DefaultProject: (*tgbot.DefaultProjectSettings)(defaultproject),
 	})
 	if err != nil {
 		c.Log.WithFields(logrus.Fields{
@@ -165,11 +187,12 @@ func AppCtxInit() (any, error) {
 
 	c.Rdmnhndlr = rdmnhndlr.Init(
 		rdmnhndlr.Settings{
-			Bot:        c.Bot,
-			LangBundle: lb,
-			Users:      usrs,
-			Issues:     iss,
-			Feedback:   (*rdmnhndlr.FeedbackSettings)(feedback),
+			Bot:            c.Bot,
+			LangBundle:     lb,
+			Users:          usrs,
+			Issues:         iss,
+			Feedback:       (*rdmnhndlr.FeedbackSettings)(feedback),
+			DefaultProject: (*rdmnhndlr.DefaultProjectSettings)(defaultproject),
 		},
 	)
 

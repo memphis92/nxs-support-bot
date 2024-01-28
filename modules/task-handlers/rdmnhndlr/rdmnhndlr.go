@@ -13,11 +13,12 @@ import (
 )
 
 type Settings struct {
-	Bot        *tgbot.Bot
-	LangBundle localization.Bundle
-	Users      users.Users
-	Issues     issues.Issues
-	Feedback   *FeedbackSettings
+	Bot            *tgbot.Bot
+	LangBundle     localization.Bundle
+	Users          users.Users
+	Issues         issues.Issues
+	Feedback       *FeedbackSettings
+	DefaultProject *DefaultProjectSettings
 }
 
 type FeedbackSettings struct {
@@ -25,12 +26,18 @@ type FeedbackSettings struct {
 	UserID    int64
 }
 
+type DefaultProjectSettings struct {
+	ProjectID   int64
+	ProjectName string
+}
+
 type RdmnHndlr struct {
-	b        *tgbot.Bot
-	lb       localization.Bundle
-	usrs     users.Users
-	iss      issues.Issues
-	feedback *feedbackCtx
+	b              *tgbot.Bot
+	lb             localization.Bundle
+	usrs           users.Users
+	iss            issues.Issues
+	feedback       *feedbackCtx
+	defaultproject *defaultprojectCtx
 }
 
 type PermissionsData struct {
@@ -41,6 +48,11 @@ type PermissionsData struct {
 type feedbackCtx struct {
 	projectID int64
 	userID    int64
+}
+
+type defaultprojectCtx struct {
+	projectID   int64
+	projectName string
 }
 
 type sendMessagesPrepData struct {
@@ -79,6 +91,15 @@ func Init(s Settings) RdmnHndlr {
 				userID:    s.Feedback.UserID,
 			}
 		}(),
+		defaultproject: func() *defaultprojectCtx {
+			if s.DefaultProject == nil {
+				return nil
+			}
+			return &defaultprojectCtx{
+				projectID:   s.DefaultProject.ProjectID,
+				projectName: s.DefaultProject.ProjectName,
+			}
+		}(),
 	}
 }
 
@@ -88,7 +109,7 @@ func (rh *RdmnHndlr) sendMessagesPrep(d sendMessagesPrepData) ([]tgbot.SendRcptD
 
 	sd := []tgbot.SendRcptData{}
 
-	rcpts := rcptsGet(d.users, d.author, d.permissions)
+	rcpts := rcptsGet(d.users, d.author, d.permissions, rh.defaultproject)
 
 	for _, r := range rcpts {
 
@@ -219,7 +240,7 @@ func (rh *RdmnHndlr) feedbackUserGet(issueID int64) (*feedbackUser, error) {
 }
 
 // rcptsGet gets recipients for update
-func rcptsGet(accs []misc.IDName, exclude misc.IDName, permissions permissionsCheck) []int64 {
+func rcptsGet(accs []misc.IDName, exclude misc.IDName, permissions permissionsCheck, defaultproject *defaultprojectCtx) []int64 {
 
 	var rcpts []int64
 
@@ -235,22 +256,24 @@ func rcptsGet(accs []misc.IDName, exclude misc.IDName, permissions permissionsCh
 			continue
 		}
 
-		// Check rcpt is a project member
-		m, e := permissions.members[a.ID]
-		if e == false {
-			continue
-		}
+		if defaultproject != nil {
 
-		// Check rcpt allows to view current issue
-		if m.ViewCurrentIssue == false {
-			continue
-		}
+			// Check rcpt is a project member
+			m, e := permissions.members[a.ID]
+			if e == false {
+				continue
+			}
 
-		// Check rcpt allows to view private notes (if necessary)
-		if permissions.isPrivateNotes == true && m.ViewPrivateNotes == false {
-			continue
-		}
+			// Check rcpt allows to view current issue
+			if m.ViewCurrentIssue == false {
+				continue
+			}
 
+			// Check rcpt allows to view private notes (if necessary)
+			if permissions.isPrivateNotes == true && m.ViewPrivateNotes == false {
+				continue
+			}
+		}
 		// If all checks are passed
 
 		// Preserve recipients uniqueness

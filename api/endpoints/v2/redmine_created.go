@@ -96,6 +96,13 @@ func RedmineCreated(cc *ctx.Ctx, c *gin.Context) handlers.RouteHandlerResponse {
 					}
 					return members
 				}(),
+				ProjectMembers: func() []misc.IDName {
+					var members []misc.IDName
+					for _, m := range rx.IssueCreateDataRx.IssueCreateObjectRx.Project.Members {
+						members = append(members, misc.IDName{m.ID, m.Name})
+					}
+					return members
+				}(),
 			},
 		); err != nil {
 			cc.Log.WithFields(logrus.Fields{

@@ -22,6 +22,7 @@ type CreatedData struct {
 	Watchers       []misc.IDName
 	Attachments    []int64
 	Members        map[int64]PermissionsData
+	ProjectMembers []misc.IDName
 }
 
 func (rh *RdmnHndlr) IssueCreated(data CreatedData) error {
@@ -34,6 +35,10 @@ func (rh *RdmnHndlr) IssueCreated(data CreatedData) error {
 				elts = append(elts, data.AssignedTo)
 				elts = append(elts, data.Watchers...)
 				elts = append(elts, data.MentionedUsers...)
+				if data.AssignedTo.ID == 0 {
+					elts = append(elts, data.ProjectMembers...)
+				}
+
 				return elts
 			}(),
 			author: data.Author,

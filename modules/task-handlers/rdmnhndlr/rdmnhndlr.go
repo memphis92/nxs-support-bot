@@ -256,7 +256,7 @@ func rcptsGet(accs []misc.IDName, exclude misc.IDName, permissions permissionsCh
 			continue
 		}
 
-		if defaultproject != nil {
+		if defaultproject == nil {
 
 			// Check rcpt is a project member
 			m, e := permissions.members[a.ID]
